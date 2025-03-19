@@ -3,6 +3,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Trash2, Edit, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
 
 interface WardrobeItemProps {
   id: string;
@@ -11,10 +18,20 @@ interface WardrobeItemProps {
   category: string;
   tags: string[];
   onRemove?: () => void;  // Added onRemove prop as optional
+  onEdit?: (id: string) => void;
 }
 
-const WardrobeItem = ({ id, image, name, category, tags, onRemove }: WardrobeItemProps) => {
+const WardrobeItem = ({ id, image, name, category, tags, onRemove, onEdit }: WardrobeItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(id);
+    } else {
+      setIsEditDialogOpen(true);
+    }
+  };
 
   return (
     <motion.div
@@ -38,7 +55,12 @@ const WardrobeItem = ({ id, image, name, category, tags, onRemove }: WardrobeIte
           animate={{ opacity: isHovered ? 1 : 0 }}
         >
           <div className="flex gap-2">
-            <Button size="icon" variant="secondary" className="rounded-full h-9 w-9">
+            <Button 
+              size="icon" 
+              variant="secondary" 
+              className="rounded-full h-9 w-9"
+              onClick={handleEdit}
+            >
               <Edit className="h-4 w-4" />
             </Button>
             <Button 
@@ -79,6 +101,18 @@ const WardrobeItem = ({ id, image, name, category, tags, onRemove }: WardrobeIte
           </div>
         )}
       </div>
+      
+      {/* This is a placeholder for the edit dialog - you can implement this based on your needs */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Item</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Edit functionality will go here</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };

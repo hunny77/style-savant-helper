@@ -17,6 +17,7 @@ interface WardrobeContextType {
   removeItem: (id: string) => void;
   filterItems: (category: string, searchQuery: string) => WardrobeItem[];
   getCategoryCount: (category: string) => number;
+  uploadImage: (file: File) => Promise<string>;
 }
 
 const WardrobeContext = createContext<WardrobeContextType | undefined>(undefined);
@@ -62,6 +63,18 @@ export const WardrobeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem("wardrobeItems", JSON.stringify(items));
     }
   }, [items]);
+
+  const uploadImage = async (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // In a real app, we would upload to a server/storage service
+        // For now, we'll use the base64 data URL
+        resolve(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   const addItem = (newItem: Omit<WardrobeItem, "id" | "createdAt">) => {
     const itemWithId: WardrobeItem = {
@@ -111,7 +124,14 @@ export const WardrobeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <WardrobeContext.Provider value={{ items, addItem, removeItem, filterItems, getCategoryCount }}>
+    <WardrobeContext.Provider value={{ 
+      items, 
+      addItem, 
+      removeItem, 
+      filterItems, 
+      getCategoryCount,
+      uploadImage 
+    }}>
       {children}
     </WardrobeContext.Provider>
   );

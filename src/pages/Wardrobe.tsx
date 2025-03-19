@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shirt, Plus, ArrowLeft, Search, Filter, Upload, X, Tag } from "lucide-react";
+import { Shirt, Plus, ArrowLeft, Search, Filter, Tag, X } from "lucide-react";
 import WardrobeItem from "@/components/WardrobeItem";
+import FileUpload from "@/components/FileUpload";
 import { useWardrobe } from "@/contexts/WardrobeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,9 +21,11 @@ const Wardrobe = () => {
   const [newItemTags, setNewItemTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   const { isAuthenticated } = useAuth();
-  const { items, addItem, removeItem, filterItems, getCategoryCount } = useWardrobe();
+  const { items, addItem, removeItem, filterItems, getCategoryCount, uploadImage } = useWardrobe();
   const { toast } = useToast();
   
   // Categories with dynamic counts
@@ -57,7 +60,31 @@ const Wardrobe = () => {
     }
   };
 
-  const handleAddItem = () => {
+  const handleFileSelect = async (file: File) => {
+    try {
+      setIsUploading(true);
+      const imageUrl = await uploadImage(file);
+      setUploadedImage(imageUrl);
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setNewItemName("");
+    setNewItemCategory("");
+    setNewItemTags([]);
+    setUploadedImage(null);
+    setIsDialogOpen(false);
+  };
+
+  const handleAddItem = async () => {
     if (!newItemName || !newItemCategory) {
       toast({
         title: "Missing information",
@@ -67,30 +94,24 @@ const Wardrobe = () => {
       return;
     }
 
-    // In a real app, this would upload the image to storage
-    // For now, we'll use a placeholder image
-    const placeholderImages: Record<string, string> = {
-      tops: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-      bottoms: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-      outerwear: "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-      dresses: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-      footwear: "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-      accessories: "https://images.unsplash.com/photo-1624140716840-8b6b14035dcb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-      default: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-    };
+    if (!uploadedImage) {
+      toast({
+        title: "Missing image",
+        description: "Please upload an image for the item",
+        variant: "destructive"
+      });
+      return;
+    }
 
     addItem({
       name: newItemName,
       category: newItemCategory,
       tags: newItemTags,
-      image: placeholderImages[newItemCategory] || placeholderImages.default
+      image: uploadedImage
     });
 
     // Reset form
-    setNewItemName("");
-    setNewItemCategory("");
-    setNewItemTags([]);
-    setIsDialogOpen(false);
+    resetForm();
   };
 
   if (!isAuthenticated) {
@@ -132,7 +153,10 @@ const Wardrobe = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) resetForm();
+            }}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="h-4 w-4 mr-2" />
@@ -147,17 +171,13 @@ const Wardrobe = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
-                  <div className="border-2 border-dashed rounded-lg p-12 text-center mb-4">
-                    <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                      <Upload className="h-6 w-6 text-primary" />
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Drag and drop your image here or click to browse
-                    </p>
-                    <Button size="sm" variant="secondary">Upload Image</Button>
-                  </div>
+                  <FileUpload 
+                    onFileSelect={handleFileSelect} 
+                    preview={uploadedImage || undefined} 
+                    onClearPreview={() => setUploadedImage(null)}
+                  />
                   
-                  <div className="space-y-4">
+                  <div className="space-y-4 mt-4">
                     <div>
                       <label htmlFor="name" className="text-sm font-medium block mb-1">
                         Item Name
@@ -228,8 +248,13 @@ const Wardrobe = () => {
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddItem}>Add Item</Button>
+                  <Button variant="outline" onClick={() => resetForm()}>Cancel</Button>
+                  <Button 
+                    onClick={handleAddItem} 
+                    disabled={isUploading || !newItemName || !newItemCategory || !uploadedImage}
+                  >
+                    {isUploading ? "Uploading..." : "Add Item"}
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
