@@ -1,12 +1,11 @@
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AuthFormProps {
   type: "login" | "signup";
@@ -20,32 +19,23 @@ const AuthForm = ({ type }: AuthFormProps) => {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { login, signup } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      
+    try {
       if (type === "login") {
-        // For demo, just navigate to dashboard on login
-        toast({
-          title: "Logged in successfully",
-          description: "Welcome back to your Digital Wardrobe!",
-        });
-        navigate("/dashboard");
+        await login(email, password);
       } else {
-        // For signup, navigate to login
-        toast({
-          title: "Account created successfully",
-          description: "Please log in with your new account",
-        });
-        navigate("/login");
+        await signup(name, email, password);
       }
-    }, 1500);
+    } catch (error) {
+      console.error("Authentication error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -12,8 +12,33 @@ import Dashboard from "./pages/Dashboard";
 import Wardrobe from "./pages/Wardrobe";
 import Outfits from "./pages/Outfits";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./contexts/AuthContext";
+import { WardrobeProvider } from "./contexts/WardrobeContext";
+import { WeatherProvider } from "./contexts/WeatherContext";
+import { OutfitProvider } from "./contexts/OutfitContext";
 
 const queryClient = new QueryClient();
+
+// Wrap routes with providers in correct order
+const AppProviders = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <WeatherProvider>
+            <WardrobeProvider>
+              <OutfitProvider>
+                {children}
+              </OutfitProvider>
+            </WardrobeProvider>
+          </WeatherProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 // Animation wrapper component
 const AnimatedRoutes = () => {
@@ -35,15 +60,9 @@ const AnimatedRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AnimatedRoutes />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <AppProviders>
+    <AnimatedRoutes />
+  </AppProviders>
 );
 
 export default App;
