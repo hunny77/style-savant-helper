@@ -10,9 +10,10 @@ interface WardrobeItemProps {
   name: string;
   category: string;
   tags: string[];
+  onRemove?: () => void;  // Added onRemove prop as optional
 }
 
-const WardrobeItem = ({ id, image, name, category, tags }: WardrobeItemProps) => {
+const WardrobeItem = ({ id, image, name, category, tags, onRemove }: WardrobeItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -40,7 +41,12 @@ const WardrobeItem = ({ id, image, name, category, tags }: WardrobeItemProps) =>
             <Button size="icon" variant="secondary" className="rounded-full h-9 w-9">
               <Edit className="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="destructive" className="rounded-full h-9 w-9">
+            <Button 
+              size="icon" 
+              variant="destructive" 
+              className="rounded-full h-9 w-9"
+              onClick={onRemove}  // Use the onRemove prop here
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
